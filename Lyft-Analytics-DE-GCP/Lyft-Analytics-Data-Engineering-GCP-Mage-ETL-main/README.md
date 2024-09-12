@@ -4,7 +4,7 @@ An End to End Data Engineering project analyzing a Lyft dataset with an Analytic
 # Introduction    
 The objective of this initiative is to design an end to end data analytics pipeline on Lyft data using python, GCP and Mage AI Data Pipeline tool and finally create an analytics dashboard using Looker Studio. 
 
-# Porject Objectives
+# Project Objectives
 
 * Data Acquisition - The dataset used for this project has been acquired from the nyc.gov website on TLC trip yellow and green taxi records including fields like pick-up and drop-off times, locations, trip distances, itemized fares, rate types, payment types and driver-reported counts.
 
