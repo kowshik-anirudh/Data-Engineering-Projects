@@ -1,44 +1,57 @@
-# Lyft-Analytics-Data-Engineering-GCP-Mage-ETL
-An End to End Data Engineering project analyzing a Lyft dataset with an Analytics Dashboard in Looker
+# Trip Analytics: End-to-End Data Engineering on GCP with Mage
 
-# Introduction    
-The objective of this initiative is to design an end to end data analytics pipeline on Lyft data using python, GCP and Mage AI Data Pipeline tool and finally create an analytics dashboard using Looker Studio. 
+An end-to-end batch pipeline that takes raw ride-hail/taxi trip records, models them into a star schema, loads them into BigQuery, and serves an analytics dashboard in Looker Studio.
 
-# Project Objectives
+## Architecture
 
-* Data Acquisition - The dataset used for this project has been acquired from the nyc.gov website on TLC trip yellow and green taxi records including fields like pick-up and drop-off times, locations, trip distances, itemized fares, rate types, payment types and driver-reported counts.
+```mermaid
+flowchart LR
+    A[Trip records CSV] --> B[Mage on Compute Engine<br/>extract]
+    B --> C[Mage transform<br/>pandas star schema]
+    C --> D[(BigQuery<br/>fact + dimension tables)]
+    D --> E[Analytics table<br/>SQL joins]
+    E --> F[Looker Studio dashboard]
+```
 
-* More info on the dataset here:
-  1. Website: https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
-  2. Data Directory: https://www.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf
- 
-* Data Modeling - Our focus is to come up with a data model by creating Fact and Dimension tables around the base data frame. First the data model will be designed in Lucid visually, and then as dataframes in the python environment.
+## Dataset
 
-* Transformation and ETL - After creating the data model we will need to transform the data into the proper format using Mage Ai to then also transform and load the data into the Cloud.
+NYC TLC yellow taxi trip records: pickup and drop-off times and locations, trip distance, itemized fares, rate codes, payment types, and passenger counts. A copy of the data used is in [`data/lyft_data.csv`](Lyft-etl-pipeline-data-engineering-project-main/data/lyft_data.csv).
 
-* Cloud Computing - Due to impracticality of handling extensive data locally, opting for cloud solutions is crucial; in this instance, GCP is our choice.
+- Source: https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+- Data dictionary: https://www.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf
 
-* Analytical Outputs - Construct a visual interface for obtaining responses to our earlier inquiries
+## Data model
 
-# Services Employed: 
+A star schema built in pandas ([`transform.py`](Lyft-etl-pipeline-data-engineering-project-main/mage-files/transform.py)):
 
-* Google Cloud Services
-    * Compute Engine: The VM will be used to host a virtual compute instance to insall Mage AI and run it on the cloud for ETL processing. 
-    * Cloud Storage BigQuery: This is the main data warehouse where the data will be loaded into for querying and analysis.
-    * Looker Studio: Looker stands as a scalable, serverless, machine learning-infused business intelligence (BI) service tailored for cloud environments.
-* Mage AI: This powerful AI tool is the perfect choice for on the fly data extraction, transformation and loading using python scripts and data frames for easy ETL design. 
- 
-# Data Model:
+- **fact_table**: one row per trip, with fare components (fare, extra, MTA tax, tip, tolls, surcharge, total) and keys to each dimension
+- **datetime_dim**: pickup/drop-off timestamps broken into hour, day, month, year, weekday
+- **passenger_count_dim**, **trip_distance_dim**
+- **rate_code_dim**, **payment_type_dim**: codes mapped to readable names
+- **pickup_location_dim**, **dropoff_location_dim**: latitude/longitude
 
-<img width="1236" alt="Screenshot 2023-12-17 at 3 37 42 PM" src="https://github.com/snehalsmalladi/Lyft-Analytics-Data-Engineering-GCP-Mage-ETL/assets/75508260/e92fe95d-a6b3-481d-a81f-f9868ee81acc">
+[`analytics_query.sql`](Lyft-etl-pipeline-data-engineering-project-main/analytics_query.sql) joins these back into a single analytics table for the dashboard.
 
-# Framework:
+## Pipeline (Mage)
 
-![image](https://github.com/snehalsmalladi/Lyft-Analytics-Data-Engineering-GCP-Mage-ETL/assets/75508260/1cbd68b0-55b3-4f56-b221-0c51ca263456)
+| Step | File | What it does |
+|---|---|---|
+| Extract | [`extract.py`](Lyft-etl-pipeline-data-engineering-project-main/mage-files/extract.py) | Loads the trip CSV (from this repo by default, or `LYFT_DATA_URL`) |
+| Transform | [`transform.py`](Lyft-etl-pipeline-data-engineering-project-main/mage-files/transform.py) | Builds the fact and dimension tables |
+| Load | [`load.py`](Lyft-etl-pipeline-data-engineering-project-main/mage-files/load.py) | Writes every table to BigQuery |
 
-# Analytics Dashboard:
+## Running it
 
-<img width="736" alt="Screenshot 2023-12-17 at 4 06 03 PM" src="https://github.com/snehalsmalladi/Lyft-Analytics-Data-Engineering-GCP-Mage-ETL/assets/75508260/1b619e48-9624-4441-ace5-55544dd4bbd6">
+1. Create a GCP project, a BigQuery dataset (e.g. `lyft_data_engineering`), and a service account with BigQuery access.
+2. Create a Compute Engine VM and install Mage and the Google Cloud libraries (see [`commands.txt`](Lyft-etl-pipeline-data-engineering-project-main/commands.txt)).
+3. Add the service account credentials to Mage's `io_config.yaml`.
+4. Set `GCP_PROJECT_ID` (and optionally `BQ_DATASET`) and run the pipeline.
+5. Run `analytics_query.sql` (replacing `your-gcp-project`) and connect the analytics table to Looker Studio.
 
+## Tech
 
+Python · pandas · Mage · Google Compute Engine · BigQuery · SQL · Looker Studio
 
+## Acknowledgements
+
+This project was built by following Darshil Parmar's ("Data with Darshil") Uber data engineering tutorial, and the original README structure was adapted from [snehalsmalladi/Lyft-Analytics-Data-Engineering-GCP-Mage-ETL](https://github.com/snehalsmalladi/Lyft-Analytics-Data-Engineering-GCP-Mage-ETL). The pipeline here runs in my own GCP environment, and the target project and dataset are configurable.
