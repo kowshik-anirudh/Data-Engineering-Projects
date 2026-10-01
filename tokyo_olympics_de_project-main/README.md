@@ -49,7 +49,7 @@ Source(Kaggle): [2021 Olympics in Tokyo](https://www.kaggle.com/datasets/arjunpr
 2. Configuring Compute in Databricks
 3. Create a new notebook within Databricks and rename it appropriately, reflecting its purpose or the dataset it pertains to.
 4. Establishing a Connection to Azure Data Lake Storage (ADLS)
-5. Using the credentials (Client ID, Tenant ID, Secret), write the appropriate code in the Databricks notebook to mount ADLS. 
+5. Store the service principal credentials (Client ID and Secret) in a Databricks secret scope named `tokyo-olympics`, set your Tenant ID in the OAuth endpoint, and mount ADLS from the notebook. Never hardcode credentials in the notebook.
 6. Writing Data Transformations mount ADLS Gen2 to Databricks.
 7. Writing Transformed Data to ADLS Gen2.
  <img src="Images/transformed_data_tables.png">
